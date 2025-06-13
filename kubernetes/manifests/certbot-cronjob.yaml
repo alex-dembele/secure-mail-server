@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: certbot
+  namespace: mailserver
+spec:
+  schedule: "0 */12 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: certbot
+            image: certbot/certbot
+            args:
+            - renew
+            volumeMounts:
+            - name: certs
+              mountPath: /etc/letsencrypt
+            - name: certbot-logs
+              mountPath: /var/log/letsencrypt
+          restartPolicy: OnFailure
+          volumes:
+          - name: certs
+            persistentVolumeClaim:
+              claimName: certs-pvc
+          - name: certbot-logs
+            persistentVolumeClaim:
+              claimName: certbot-logs-pvc
