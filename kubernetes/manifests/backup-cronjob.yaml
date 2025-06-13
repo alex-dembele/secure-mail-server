@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup
+  namespace: mailserver
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: mail-backup:latest
+            env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mailserver-secrets
+                  key: aws-access-key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mailserver-secrets
+                  key: aws-secret-key
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: mailserver-secrets
+                  key: aws-region
+            - name: S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: mailserver-secrets
+                  key: s3-bucket
+            - name: MYSQL_HOST
+              value: db-service
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mailserver-secrets
+                  key: mysql-user
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mailserver-secrets
+                  key: mysql-password
+            - name: MYSQL_DATABASE
+              value: maildb
+            volumeMounts:
+            - name: dbdata
+              mountPath: /backup/dbdata
+            - name: maildata
+              mountPath: /backup/maildata
+            - name: certs
+              mountPath: /backup/certs
+          restartPolicy: OnFailure
+          volumes:
+          - name: dbdata
+            persistentVolumeClaim:
+              claimName: dbdata-pvc
+          - name: maildata
+            persistentVolumeClaim:
+              claimName: maildata-pvc
+          - name: certs
+            persistentVolumeClaim:
+              claimName: certs-pvc
