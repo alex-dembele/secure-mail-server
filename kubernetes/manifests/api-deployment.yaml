@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: mailserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: mail-api:latest
+        env:
+        - name: MYSQL_HOST
+          value: db-service
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: mailserver-secrets
+              key: mysql-user
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mailserver-secrets
+              key: mysql-password
+        - name: MYSQL_DATABASE
+          value: maildb
+        ports:
+        - containerPort: 5000
