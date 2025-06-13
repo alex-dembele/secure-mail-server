@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  namespace: mailserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - name: db
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mailserver-secrets
+              key: mysql-root-password
+        - name: MYSQL_DATABASE
+          value: maildb
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: mailserver-secrets
+              key: mysql-user
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mailserver-secrets
+              key: mysql-password
+        volumeMounts:
+        - name: dbdata
+          mountPath: /var/lib/mysql
+        - name: initdb
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: dbdata
+        persistentVolumeClaim:
+          claimName: dbdata-pvc
+      - name: initdb
+        configMap:
+          name: db-init
