@@ -18,6 +18,7 @@ cd secure-mail-server
 ```
 
 **Configure Environment Variables**
+
 2- Create a .env file in the project root:MYSQL_ROOT_PASSWORD=rootpass
 ```
 MYSQL_USER=mailuser
@@ -26,7 +27,7 @@ AWS_ACCESS_KEY_ID=your_aws_access_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 AWS_DEFAULT_REGION=your_aws_region
 S3_BUCKET=your_s3_bucket
-``
+```
 
 
 3- Update Domain in **docker-compose.yml** Replace **example.com** and **mail.example.com** with your actual domain.
