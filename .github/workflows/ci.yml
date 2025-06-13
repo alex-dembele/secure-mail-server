@@ -80,12 +80,12 @@ jobs:
         # Vérifier l'accès au cluster
  #         kubectl get nodes
 
-    - name: Deploy to Kubernetes
-      run: |
-        helm upgrade --install secure-mail-server kubernetes/helm \
-          --namespace mailserver \
-          --set image.api=${{ secrets.DOCKER_USERNAME }}/mail-api:latest \
-          --set image.backup=${{ secrets.DOCKER_USERNAME }}/mail-backup:latest \
-          --set domain=${{ secrets.DOMAIN }} \
-          --set aws.region=${{ secrets.AWS_REGION }} \
-          --set aws.s3Bucket=${{ secrets.S3_BUCKET }}
+  #            - name: Deploy to Kubernetes
+  #             run: |
+ #                 helm upgrade --install secure-mail-server kubernetes/helm \
+ #                   --namespace mailserver \
+ #                   --set image.api=${{ secrets.DOCKER_USERNAME }}/mail-api:latest \
+ #                   --set image.backup=${{ secrets.DOCKER_USERNAME }}/mail-backup:latest \
+ #                   --set domain=${{ secrets.DOMAIN }} \
+ #                   --set aws.region=${{ secrets.AWS_REGION }} \
+ #                   --set aws.s3Bucket=${{ secrets.S3_BUCKET }}
