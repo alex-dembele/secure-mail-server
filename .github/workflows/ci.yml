@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -27,25 +27,23 @@ jobs:
     - name: Build API image
       working-directory: ./api
       run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/mail-api:test .
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/mail-api:latest .
 
     - name: Build Backup image
       working-directory: ./backup
       run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/mail-backup:test .
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/mail-backup:latest .
 
     - name: Push API image
       run: |
-        docker tag ${{ secrets.DOCKER_USERNAME }}/mail-api:test ${{ secrets.DOCKER_USERNAME }}/mail-api:latest
         docker push ${{ secrets.DOCKER_USERNAME }}/mail-api:latest
 
     - name: Push Backup image
       run: |
-        docker tag ${{ secrets.DOCKER_USERNAME }}/mail-backup:test ${{ secrets.DOCKER_USERNAME }}/mail-backup:latest
         docker push ${{ secrets.DOCKER_USERNAME }}/mail-backup:latest
 
   deploy:
-    needs: build-and-test
+    needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
