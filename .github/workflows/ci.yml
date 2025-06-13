@@ -60,25 +60,25 @@ jobs:
       with:
         version: v1.24.0
 
-    - name: Configure Kubernetes context
-      run: |
-        echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
-        export KUBECONFIG=kubeconfig
-        # Afficher les contextes disponibles pour débogage
-        kubectl config get-contexts
-        # Utiliser le contexte spécifié dans KUBE_CONTEXT, ou le premier disponible
-        CONTEXT=${{ secrets.KUBE_CONTEXT }}
-        if [ -z "$CONTEXT" ]; then
-          CONTEXT=$(kubectl config get-contexts -o name | head -n 1)
-        fi
-        if [ -z "$CONTEXT" ]; then
-          echo "Erreur : aucun contexte Kubernetes trouvé dans kubeconfig"
-          exit 1
-        fi
-        kubectl config use-context $CONTEXT
-        kubectl config current-context
+ #     - name: Configure Kubernetes context
+  #     run: |
+ #         echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
+ #         export KUBECONFIG=kubeconfig
+ #         # Afficher les contextes disponibles pour débogage
+ #         kubectl config get-contexts
+ #         # Utiliser le contexte spécifié dans KUBE_CONTEXT, ou le premier disponible
+ #         CONTEXT=${{ secrets.KUBE_CONTEXT }}
+ #         if [ -z "$CONTEXT" ]; then
+ #           CONTEXT=$(kubectl config get-contexts -o name | head -n 1)
+ #         fi
+ #         if [ -z "$CONTEXT" ]; then
+ #           echo "Erreur : aucun contexte Kubernetes trouvé dans kubeconfig"
+ #           exit 1
+ #         fi
+ #         kubectl config use-context $CONTEXT
+ #         kubectl config current-context
         # Vérifier l'accès au cluster
-        kubectl get nodes
+ #         kubectl get nodes
 
     - name: Deploy to Kubernetes
       run: |
