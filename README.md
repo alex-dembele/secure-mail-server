@@ -100,6 +100,7 @@ kubectl run certbot-init --image=certbot/certbot --namespace=mailserver -- certo
 
 
 **CI/CD with GitHub Actions**
+
 1- Configure GitHub SecretsAdd the following secrets in your GitHub repository settings under Settings > Secrets and variables > Actions:
 
 - DOCKER_USERNAME: Your Docker Hub username.
@@ -123,15 +124,17 @@ git push origin main
 ```
 
 **API Endpoints**
-POST /users: Create user (email, password)
-GET /users/<email>: Retrieve user
-PUT /users/<email>: Update user (password, active)
-DELETE /users/<email>: Delete user Example:
+
+- POST /users: Create user (email, password)
+- GET /users/<email>: Retrieve user
+- PUT /users/<email>: Update user (password, active)
+- DELETE /users/<email>: Delete user Example:
 ```
 curl -X POST http://<api-service-ip>:5000/users -d '{"email":"test@example.com","password":"pass123"}' -H "Content-Type: application/json"
 ```
 
 **Backup and Restore**
+
 Backup: Automated via Kubernetes CronJob, uploads to S3 daily at 2 AM.
 Restore: Run the backup pod with the restore command:
 ```
@@ -139,6 +142,7 @@ kubectl run backup-restore --image=yourusername/mail-backup:latest --namespace=m
 ```
 
 **Deployment**
+
 1- Push to GitHub:
 ```
 git add .
@@ -148,6 +152,7 @@ git push origin main
 
 
 **Notes**
+
 Replace placeholders (e.g., your_aws_access_key, example.com) with actual values.
 Monitor logs for issues:
 ```
@@ -158,6 +163,7 @@ Use a cloud provider's storage class for PersistentVolumes.
 
 
 **Security Considerations**
+
 Use strong passwords and rotate AWS keys periodically.
 Regularly update dependencies and images.
 Monitor Let's Encrypt renewal logs in the certbot-logs PVC.
