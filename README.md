@@ -47,94 +47,118 @@ docker-compose exec certbot certonly --standalone -d mail.yourdomain.com
 
 **Setup Instructions (Kubernetes)**
 1- Clone the Repository
-git clone https://github.com/yourusername/your-repo.git
-cd your-repo
+```
+git clone https://github.com/alex-dembele/secure-mail-server
+cd secure-mail-server
+```
 
-
-Build and Push Docker ImagesBuild and push the API and backup images to a registry (e.g., Docker Hub):
+2- Build and Push Docker Images, build and push the API and backup images to a registry (e.g., Docker Hub):
+```
 docker build -t yourusername/mail-api:latest ./api
 docker build -t yourusername/mail-backup:latest ./backup
 docker push yourusername/mail-api:latest
 docker push yourusername/mail-backup:latest
+```
 
-
-Create Namespace
+3- Create Namespace
+```
 kubectl create namespace mailserver
+```
 
-
-Configure SecretsUpdate kubernetes/manifests/secrets.yaml with base64-encoded values for your secrets:
+4- Configure SecretsUpdate kubernetes/manifests/secrets.yaml with base64-encoded values for your secrets:
+```
 echo -n 'your_aws_access_key' | base64
+```
 
 Apply the secrets:
+```
 kubectl apply -f kubernetes/manifests/secrets.yaml
+```
 
-
-Apply Manifests
+5- Apply Manifests
+```
 kubectl apply -f kubernetes/manifests/
+```
 
-
-Using Helm (Alternative)
+6- Using Helm (Alternative)
 
 Update kubernetes/helm/values.yaml with your domain, AWS settings, etc.
-Install the Helm chart:helm install secure-mail-server kubernetes/helm --namespace mailserver
+Install the Helm chart:
+```
+helm install secure-mail-server kubernetes/helm --namespace mailserver
+```
 
-
-
-
-Initialize DatabaseCreate a ConfigMap for init.sql:
+7- Initialize Database Create a ConfigMap for init.sql:
+```
 kubectl create configmap db-init --from-file=init.sql -n mailserver
+```
 
-
-Obtain Let's Encrypt CertificatesRun a one-time job to get initial certificates:
+8- Obtain Let's Encrypt Certificates Run a one-time job to get initial certificates:
+```
 kubectl run certbot-init --image=certbot/certbot --namespace=mailserver -- certonly --standalone -d mail.yourdomain.com
+```
 
 
+**CI/CD with GitHub Actions**
+1- Configure GitHub SecretsAdd the following secrets in your GitHub repository settings under Settings > Secrets and variables > Actions:
 
-API Endpoints
+- DOCKER_USERNAME: Your Docker Hub username.
+- DOCKER_PASSWORD: Your Docker Hub access token.
+- KUBE_CONFIG: Base64-encoded Kubernetes config file (cat ~/.kube/config | base64)
+- DOMAIN: Your domain (e.g., example.com).
+- AWS_REGION: Your AWS region (e.g., us-east-1).
+- S3_BUCKET: Your S3 bucket name.
 
+2- Pipeline Overview
+On push to main or pull requests:
+- Builds and tests the api and backup images.
+- Pushes images to Docker Hub.
+- Deploys to Kubernetes using Helm (only on push to main).
+
+3- Trigger the PipelinePush changes to the main branch or create a pull request to trigger the pipeline:
+```
+git add .
+git commit -m "Update application"
+git push origin main
+```
+
+**API Endpoints**
 POST /users: Create user (email, password)
 GET /users/<email>: Retrieve user
 PUT /users/<email>: Update user (password, active)
-DELETE /users/<email>: Delete userExample:
-
+DELETE /users/<email>: Delete user Example:
+```
 curl -X POST http://<api-service-ip>:5000/users -d '{"email":"test@example.com","password":"pass123"}' -H "Content-Type: application/json"
+```
 
-Backup and Restore
-
+**Backup and Restore**
 Backup: Automated via Kubernetes CronJob, uploads to S3 daily at 2 AM.
-Restore: Run the backup pod with the restore command:kubectl run backup-restore --image=yourusername/mail-backup:latest --namespace=mailserver -- python backup.py <s3_key>
+Restore: Run the backup pod with the restore command:
+```
+kubectl run backup-restore --image=yourusername/mail-backup:latest --namespace=mailserver -- python backup.py <s3_key>
+```
 
-
-
-Deployment
-
-Push to GitHub:
+**Deployment**
+1- Push to GitHub:
+```
 git add .
-git commit -m "Add Kubernetes support"
+git commit -m "Add CI/CD pipeline"
 git push origin main
+```
 
 
-Set up CI/CD (optional) with GitHub Actions:
-
-Create .github/workflows/ci.yml for automated builds and deployments.
-
-
-
-Notes
-
+**Notes**
 Replace placeholders (e.g., your_aws_access_key, example.com) with actual values.
-Monitor logs for issues:kubectl logs -n mailserver <pod-name>
-
-
+Monitor logs for issues:
+```
+kubectl logs -n mailserver <pod-name>
+```
 Ensure ports 25, 587, and 993 are exposed via the LoadBalancer service for mailserver.
 Use a cloud provider's storage class for PersistentVolumes.
 
-Security Considerations
 
+**Security Considerations**
 Use strong passwords and rotate AWS keys periodically.
 Regularly update dependencies and images.
 Monitor Let's Encrypt renewal logs in the certbot-logs PVC.
 Restrict access to the API service with network policies if needed.
-
-License
-MIT License
