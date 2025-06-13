@@ -1,0 +1,18 @@
+replicaCount: 1
+image:
+  mailserver: postfixadmin/postfix-dovecot
+  db: mysql:8.0
+  api: mail-api:latest
+  backup: mail-backup:latest
+  certbot: certbot/certbot
+domain: example.com
+mysql:
+  database: maildb
+aws:
+  region: your_aws_region
+  s3Bucket: your_s3_bucket
+storage:
+  maildata: 10Gi
+  dbdata: 10Gi
+  certs: 1Gi
+  certbotLogs: 1Gi
