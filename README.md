@@ -1,22 +1,23 @@
-Secure Messaging Solution
-Overview
-A secure mail server setup using Docker, Postfix, Dovecot, MySQL, and a Flask-based REST API for user management. Includes automated backups to S3 and TLS/Let's Encrypt for security. Deployable with Docker Compose or Kubernetes.
-Prerequisites
+### Secure Messaging Solution
 
+### Overview
+A secure mail server setup using Docker, Postfix, Dovecot, MySQL, and a Flask-based REST API for user management. Includes automated backups to S3 and TLS/Let's Encrypt for security. Deployable with Docker Compose or Kubernetes.
+
+### Prerequisites
 Docker and Docker Compose (for Docker deployment)
 Kubernetes cluster with kubectl and Helm (for Kubernetes deployment)
 AWS account with S3 bucket for backups
 Domain name for mail server (e.g., example.com)
 GitHub account for repository hosting
 
-Setup Instructions (Docker Compose)
-
+### Setup Instructions (Docker Compose)
 Clone the Repository
+```
 git clone https://github.com/alex-dembele/secure-mail-server
-cd your-repo
+cd the-repo
+```
 
-
-Configure Environment Variables
+### Configure Environment Variables
 
 Create a .env file in the project root:MYSQL_ROOT_PASSWORD=rootpass
 MYSQL_USER=mailuser
