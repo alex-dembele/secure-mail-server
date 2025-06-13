@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailserver
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: mailserver
+  template:
+    metadata:
+      labels:
+        app: mailserver
+    spec:
+      containers:
+      - name: mailserver
+        image: {{ .Values.image.mailserver }}
+        env:
+        - name: POSTFIXADMIN_DB_TYPE
+          value: mysql
+        - name: POSTFIXADMIN_DB_HOST
+          value: db-service
+        - name: POSTFIXADMIN_DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mailserver-secrets
+              key: mysql-user
+        - name: POSTFIXADMIN_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mailserver-secrets
+              key: mysql-password
+        - name: POSTFIXADMIN_DB_NAME
+          value: {{ .Values.mysql.database }}
+        - name: POSTFIXADMIN_SETUP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mailserver-secrets
+              key: postfixadmin-password
+        volumeMounts:
+        - name: maildata
+          mountPath: /var/mail
+        - name: mailconfig
+          mountPath: /etc/postfix
+        - name: certs
+          mountPath: /etc/letsencrypt
+      volumes:
+      - name: maildata
+        persistentVolumeClaim:
+          claimName: maildata-pvc
+      - name: mailconfig
+        emptyDir: {}
+      - name: certs
+        persistentVolumeClaim:
+          claimName: certs-pvc

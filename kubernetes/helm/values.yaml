@@ -16,3 +16,10 @@ storage:
   dbdata: 10Gi
   certs: 1Gi
   certbotLogs: 1Gi
+secrets:
+  mysqlRootPassword: rootpass
+  mysqlUser: mailuser
+  mysqlPassword: mailpass
+  postfixadminPassword: adminpass
+  awsAccessKey: your_aws_access_key
+  awsSecretKey: your_aws_secret_key
