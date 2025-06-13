@@ -1,51 +1,51 @@
-### Secure Messaging Solution
+Secure Messaging Solution
 
-### Overview
+**Overview**
 A secure mail server setup using Docker, Postfix, Dovecot, MySQL, and a Flask-based REST API for user management. Includes automated backups to S3 and TLS/Let's Encrypt for security. Deployable with Docker Compose or Kubernetes.
 
-### Prerequisites
+**Prerequisites**
 Docker and Docker Compose (for Docker deployment)
 Kubernetes cluster with kubectl and Helm (for Kubernetes deployment)
 AWS account with S3 bucket for backups
 Domain name for mail server (e.g., example.com)
 GitHub account for repository hosting
 
-### Setup Instructions (Docker Compose)
-Clone the Repository
+**Setup Instructions (Docker Compose)**
+1- Clone the Repository
 ```
 git clone https://github.com/alex-dembele/secure-mail-server
-cd the-repo
+cd secure-mail-server
 ```
 
-### Configure Environment Variables
-
-Create a .env file in the project root:MYSQL_ROOT_PASSWORD=rootpass
+**Configure Environment Variables**
+2- Create a .env file in the project root:MYSQL_ROOT_PASSWORD=rootpass
+```
 MYSQL_USER=mailuser
 MYSQL_PASSWORD=mailpass
 AWS_ACCESS_KEY_ID=your_aws_access_key
 AWS_SECRET_ACCESS_KEY=your_aws_secret_key
 AWS_DEFAULT_REGION=your_aws_region
 S3_BUCKET=your_s3_bucket
+``
 
 
+3- Update Domain in **docker-compose.yml** Replace **example.com** and **mail.example.com** with your actual domain.
 
+4- Initialize DatabaseCopy init.sql to a volume or execute it in the MySQL container to set up the users table.
 
-Update Domain in docker-compose.ymlReplace example.com and mail.example.com with your actual domain.
-
-Initialize DatabaseCopy init.sql to a volume or execute it in the MySQL container to set up the users table.
-
-Run Docker Compose
+5- Run Docker Compose
+```
 docker-compose up -d
+```
 
-
-Obtain Let's Encrypt CertificatesInitially run:
+6- Obtain Let's Encrypt Certificates Initially run:
+```
 docker-compose exec certbot certonly --standalone -d mail.yourdomain.com
+```
 
 
-
-Setup Instructions (Kubernetes)
-
-Clone the Repository
+**Setup Instructions (Kubernetes)**
+1- Clone the Repository
 git clone https://github.com/yourusername/your-repo.git
 cd your-repo
 
