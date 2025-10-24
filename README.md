@@ -1,4 +1,4 @@
-Secure Messaging Solution
+Secure Messaging Solution.
 
 **Overview**
 A secure mail server setup using Docker, Postfix, Dovecot, MySQL, and a Flask-based REST API for user management. Includes automated backups to S3 and TLS/Let's Encrypt for security. Deployable with Docker Compose or Kubernetes.
