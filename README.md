@@ -1,170 +1,221 @@
-Secure Messaging Solution.
+# 📬 Mailserver Kubernetes - Production-Ready Email Infrastructure
 
-**Overview**
-A secure mail server setup using Docker, Postfix, Dovecot, MySQL, and a Flask-based REST API for user management. Includes automated backups to S3 and TLS/Let's Encrypt for security. Deployable with Docker Compose or Kubernetes.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Multi-Arch](https://img.shields.io/badge/arch-amd64%20%7C%20arm64-blue)](https://github.com/)
+[![Kubernetes](https://img.shields.io/badge/kubernetes-1.25%2B-blue)](https://kubernetes.io/)
 
-**Prerequisites**
-Docker and Docker Compose (for Docker deployment)
-Kubernetes cluster with kubectl and Helm (for Kubernetes deployment)
-AWS account with S3 bucket for backups
-Domain name for mail server (e.g., example.com)
-GitHub account for repository hosting
+Une solution complète de messagerie professionnelle hautement disponible, sécurisée et scalable, déployable sur Kubernetes.
 
-**Setup Instructions (Docker Compose)**
-1- Clone the Repository
-```
-git clone https://github.com/alex-dembele/secure-mail-server
-cd secure-mail-server
-```
+## 🎯 Objectifs
 
-**Configure Environment Variables**
+- **Production-Ready** : Haute disponibilité, monitoring, backups automatiques
+- **Sécurité** : TLS, DKIM, DMARC, SPF, antispam, antivirus
+- **Multi-architecture** : Support amd64 et arm64
+- **Cloud-Native** : Déployable sur tout cluster Kubernetes via Helm
+- **Observabilité** : Métriques Prometheus, dashboards Grafana, logs centralisés
 
-2- Create a .env file in the project root:MYSQL_ROOT_PASSWORD=rootpass
-```
-MYSQL_USER=mailuser
-MYSQL_PASSWORD=mailpass
-AWS_ACCESS_KEY_ID=your_aws_access_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-AWS_DEFAULT_REGION=your_aws_region
-S3_BUCKET=your_s3_bucket
-```
+## ✨ Fonctionnalités
 
+### Serveur Mail
+- **MTA** : Postfix (SMTP entrant/sortant)
+- **MDA** : Dovecot (IMAP, POP3, LMTP)
+- **Stockage** : Maildir avec quotas par utilisateur
+- **Authentification** : SASL via Dovecot, base MySQL/MariaDB
 
-3- Update Domain in **docker-compose.yml** Replace **example.com** and **mail.example.com** with your actual domain.
+### Sécurité & Délivrabilité
+- **TLS** : Certificats automatiques via cert-manager (Let's Encrypt)
+- **DKIM** : Signature automatique des emails sortants
+- **SPF & DMARC** : Configuration et reporting
+- **Antispam** : Rspamd avec scoring avancé
+- **Antivirus** : ClamAV pour scan des pièces jointes
+- **Rate Limiting** : Protection contre les abus
 
-4- Initialize DatabaseCopy init.sql to a volume or execute it in the MySQL container to set up the users table.
+### Interface Web
+- **Admin Console** : Gestion utilisateurs, domaines, quotas, statistiques
+- **Webmail** : Interface moderne pour les utilisateurs finaux
+- **Collaboration** : Calendriers (CalDAV), Contacts (CardDAV)
+- **Filtres** : Gestion des règles Sieve par l'utilisateur
 
-5- Run Docker Compose
-```
-docker-compose up -d
-```
+### Haute Disponibilité
+- **Scalabilité horizontale** : Postfix et Dovecot en cluster
+- **Réplication** : Synchronisation des boîtes mail (dsync)
+- **Multi-tenant** : Support de domaines multiples
+- **Backups** : Sauvegardes incrémentales vers S3
 
-6- Obtain Let's Encrypt Certificates Initially run:
-```
-docker-compose exec certbot certonly --standalone -d mail.yourdomain.com
-```
+## 🏗️ Architecture
 
-
-**Setup Instructions (Kubernetes)**
-1- Clone the Repository
 ```
-git clone https://github.com/alex-dembele/secure-mail-server
-cd secure-mail-server
-```
-
-2- Build and Push Docker Images, build and push the API and backup images to a registry (e.g., Docker Hub):
-```
-docker build -t yourusername/mail-api:latest ./api
-docker build -t yourusername/mail-backup:latest ./backup
-docker push yourusername/mail-api:latest
-docker push yourusername/mail-backup:latest
-```
-
-3- Create Namespace
-```
-kubectl create namespace mailserver
-```
-
-4- Configure SecretsUpdate kubernetes/manifests/secrets.yaml with base64-encoded values for your secrets:
-```
-echo -n 'your_aws_access_key' | base64
-```
-
-Apply the secrets:
-```
-kubectl apply -f kubernetes/manifests/secrets.yaml
-```
-
-5- Apply Manifests
-```
-kubectl apply -f kubernetes/manifests/
-```
-
-6- Using Helm (Alternative)
-
-Update kubernetes/helm/values.yaml with your domain, AWS settings, etc.
-Install the Helm chart:
-```
-helm install secure-mail-server kubernetes/helm --namespace mailserver
-```
-
-7- Initialize Database Create a ConfigMap for init.sql:
-```
-kubectl create configmap db-init --from-file=init.sql -n mailserver
+┌─────────────────────────────────────────────────────────────┐
+│                     Internet / Users                         │
+└──────────────────┬──────────────────────────────────────────┘
+                   │
+         ┌─────────▼─────────┐
+         │  Ingress / LB     │
+         │  (TLS Termination)│
+         └─────────┬─────────┘
+                   │
+      ┌────────────┼────────────┐
+      │            │            │
+┌─────▼─────┐ ┌───▼────┐ ┌────▼─────┐
+│  Postfix  │ │Web UI  │ │ Admin API│
+│  (SMTP)   │ │(React) │ │(REST API)│
+└─────┬─────┘ └───┬────┘ └────┬─────┘
+      │           │            │
+      │      ┌────▼────────────▼─────┐
+      │      │   MySQL / MariaDB     │
+      │      │  (Users, Domains)     │
+      │      └───────────────────────┘
+      │
+┌─────▼─────────────────┐
+│  Rspamd + ClamAV      │
+│  (Spam/Virus Filter)  │
+└─────┬─────────────────┘
+      │
+┌─────▼──────┐
+│  OpenDKIM  │
+│  (Signing) │
+└─────┬──────┘
+      │
+┌─────▼─────┐
+│  Dovecot  │
+│  (IMAP)   │
+└─────┬─────┘
+      │
+┌─────▼─────┐
+│  Storage  │
+│  (PVC)    │
+└───────────┘
 ```
 
-8- Obtain Let's Encrypt Certificates Run a one-time job to get initial certificates:
-```
-kubectl run certbot-init --image=certbot/certbot --namespace=mailserver -- certonly --standalone -d mail.yourdomain.com
-```
+## 📋 Prérequis
 
+- **Kubernetes** : v1.25+ (recommandé v1.28+)
+- **Helm** : v3.10+
+- **kubectl** : Compatible avec votre version K8s
+- **Cert-manager** : v1.12+ (pour TLS automatique)
+- **Storage Class** : Pour les volumes persistants
+- **Load Balancer** : Pour exposition SMTP/IMAP (ou NodePort en dev)
 
-**CI/CD with GitHub Actions**
+### Optionnel
+- **Prometheus** : Pour les métriques
+- **Grafana** : Pour les dashboards
+- **MinIO / S3** : Pour les backups
 
-1- Configure GitHub SecretsAdd the following secrets in your GitHub repository settings under Settings > Secrets and variables > Actions:
+## 🚀 Installation Rapide
 
-- DOCKER_USERNAME: Your Docker Hub username.
-- DOCKER_PASSWORD: Your Docker Hub access token.
-- KUBE_CONFIG: Base64-encoded Kubernetes config file (cat ~/.kube/config | base64)
-- DOMAIN: Your domain (e.g., example.com).
-- AWS_REGION: Your AWS region (e.g., us-east-1).
-- S3_BUCKET: Your S3 bucket name.
+```bash
+# 1. Cloner le repository
+git clone https://github.com/votre-org/mailserver-k8s.git
+cd mailserver-k8s
 
-2- Pipeline Overview
-On push to main or pull requests:
-- Builds and tests the api and backup images.
-- Pushes images to Docker Hub.
-- Deploys to Kubernetes using Helm (only on push to main).
+# 2. Configurer les valeurs
+cp infra/helm/mailserver/values.yaml my-values.yaml
+# Éditer my-values.yaml avec vos paramètres
 
-3- Trigger the PipelinePush changes to the main branch or create a pull request to trigger the pipeline:
-```
-git add .
-git commit -m "Update application"
-git push origin main
-```
+# 3. Déployer via Helm
+helm install mailserver ./infra/helm/mailserver \
+  -f my-values.yaml \
+  --namespace mail \
+  --create-namespace
 
-**API Endpoints**
-
-- POST /users: Create user (email, password)
-- GET /users/<email>: Retrieve user
-- PUT /users/<email>: Update user (password, active)
-- DELETE /users/<email>: Delete user Example:
-```
-curl -X POST http://<api-service-ip>:5000/users -d '{"email":"test@example.com","password":"pass123"}' -H "Content-Type: application/json"
+# 4. Vérifier le déploiement
+kubectl get pods -n mail
+kubectl get svc -n mail
 ```
 
-**Backup and Restore**
+## 📖 Documentation
 
-Backup: Automated via Kubernetes CronJob, uploads to S3 daily at 2 AM.
-Restore: Run the backup pod with the restore command:
+- [Installation Complète](docs/INSTALL.md)
+- [Guide d'Opération](docs/OPERATIONS.md)
+- [Migration depuis Exchange](docs/MIGRATION_FROM_EXCHANGE.md)
+- [Architecture Détaillée](docs/architecture/README.md)
+- [API Documentation](docs/API.md)
+
+## 🔧 Développement
+
+### Build Local
+
+```bash
+# Build des images multi-arch
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t mailserver/postfix:latest \
+  ./services/postfix
+
+# Tests
+make test
+
+# Linting
+make lint
 ```
-kubectl run backup-restore --image=yourusername/mail-backup:latest --namespace=mailserver -- python backup.py <s3_key>
+
+### CI/CD
+
+Le projet utilise GitHub Actions pour :
+- Build multi-architecture des images
+- Tests automatisés (unit, integration, e2e)
+- Scan de sécurité (Trivy)
+- Publication des images et charts Helm
+
+## 🧪 Tests
+
+```bash
+# Tests unitaires
+make test-unit
+
+# Tests d'intégration
+make test-integration
+
+# Tests end-to-end (nécessite un cluster K8s)
+make test-e2e
+
+# Test d'envoi/réception
+./scripts/testing/smoke-test.sh
 ```
 
-**Deployment**
+## 📊 Monitoring
 
-1- Push to GitHub:
+Dashboards Grafana inclus :
+- **Mail Server Overview** : Métriques globales
+- **Queue Depth** : Profondeur de la queue Postfix
+- **IMAP Performance** : Latence et connexions Dovecot
+- **Spam Detection** : Statistiques Rspamd
+- **Deliverability** : DKIM/SPF/DMARC status
+
+## 💾 Backup & Restore
+
+```bash
+# Backup complet
+./scripts/backup/full-backup.sh
+
+# Restore d'une boîte utilisateur
+./scripts/restore/restore-mailbox.sh user@domain.com
+
+# Restore d'un domaine
+./scripts/restore/restore-domain.sh domain.com
 ```
-git add .
-git commit -m "Add CI/CD pipeline"
-git push origin main
-```
 
+## 🤝 Contribution
 
-**Notes**
+Les contributions sont les bienvenues ! Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour les guidelines.
 
-Replace placeholders (e.g., your_aws_access_key, example.com) with actual values.
-Monitor logs for issues:
-```
-kubectl logs -n mailserver <pod-name>
-```
-Ensure ports 25, 587, and 993 are exposed via the LoadBalancer service for mailserver.
-Use a cloud provider's storage class for PersistentVolumes.
+## 📄 License
 
+MIT License - voir [LICENSE](LICENSE) pour les détails.
 
-**Security Considerations**
+## 🙏 Remerciements
 
-Use strong passwords and rotate AWS keys periodically.
-Regularly update dependencies and images.
-Monitor Let's Encrypt renewal logs in the certbot-logs PVC.
-Restrict access to the API service with network policies if needed.
+Basé sur les excellents projets open-source :
+- [Postfix](http://www.postfix.org/)
+- [Dovecot](https://www.dovecot.org/)
+- [Rspamd](https://rspamd.com/)
+- [ClamAV](https://www.clamav.net/)
+
+## 📞 Support
+
+- **Issues** : GitHub Issues
+- **Discussions** : GitHub Discussions
+- **Email** : support@votredomaine.com
+
+---
+
+**Version** : 0.1.0 | **Status** : 🚧 En développement actif
