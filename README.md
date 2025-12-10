@@ -46,7 +46,7 @@ Une solution complète de messagerie professionnelle hautement disponible, sécu
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Internet / Users                         │
+│                     Internet / Users                        │
 └──────────────────┬──────────────────────────────────────────┘
                    │
          ┌─────────▼─────────┐
