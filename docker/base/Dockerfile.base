@@ -1,0 +1,87 @@
+# ============================================
+# Base Image for Mailserver Components
+# Multi-architecture: amd64, arm64
+# Based on Alpine Linux for minimal size
+# ============================================
+
+FROM alpine:3.19
+
+# Metadata
+LABEL maintainer="mailserver-team@example.com"
+LABEL version="1.0.0"
+LABEL description="Base image for mailserver components"
+LABEL org.opencontainers.image.source="https://github.com/your-org/mailserver-k8s"
+
+# Build arguments
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+# Environment variables
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    TZ=UTC \
+    MAILSERVER_VERSION=1.0.0
+
+# Display build information
+RUN echo "Building for platform: ${TARGETPLATFORM}" && \
+    echo "Build platform: ${BUILDPLATFORM}" && \
+    echo "Target OS: ${TARGETOS}" && \
+    echo "Target Architecture: ${TARGETARCH}"
+
+# Update system and install common dependencies
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+        # Core utilities
+        bash \
+        ca-certificates \
+        curl \
+        tzdata \
+        su-exec \
+        # Process management
+        tini \
+        # Network utilities
+        netcat-openbsd \
+        bind-tools \
+        # Security
+        openssl \
+        # Monitoring
+        procps \
+        # Logging
+        rsyslog && \
+    # Cleanup
+    rm -rf /var/cache/apk/* /tmp/* && \
+    # Create common directories
+    mkdir -p /var/log/mailserver /var/run/mailserver /etc/mailserver
+
+# Create non-root user for security
+RUN addgroup -g 5000 mailserver && \
+    adduser -D -u 5000 -G mailserver -h /var/mail -s /bin/bash mailserver && \
+    # Create mail storage directory
+    mkdir -p /var/mail && \
+    chown -R mailserver:mailserver /var/mail /var/log/mailserver /var/run/mailserver
+
+# Health check script (to be overridden in derived images)
+COPY docker/scripts/healthcheck.sh /usr/local/bin/healthcheck.sh
+RUN chmod +x /usr/local/bin/healthcheck.sh
+
+# Entrypoint script (to be overridden in derived images)
+COPY docker/scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Use tini as init system
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
+
+# Default command (to be overridden)
+CMD ["/bin/bash"]
+
+# Volume for persistent data (to be overridden)
+VOLUME ["/var/mail"]
+
+# Working directory
+WORKDIR /var/mail
+
+# Switch to non-root user (can be overridden)
+USER mailserver
