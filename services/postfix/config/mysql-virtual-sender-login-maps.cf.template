@@ -1,0 +1,11 @@
+# ============================================
+# MySQL Virtual Sender Login Maps
+# Verify sender login ownership (anti-spoofing)
+# Returns email addresses user is allowed to send from
+# ============================================
+
+user = ${DB_USER}
+password = ${DB_PASSWORD}
+hosts = ${DB_HOST}:${DB_PORT}
+dbname = ${DB_NAME}
+query = SELECT email FROM users WHERE email='%s' AND active=1 UNION SELECT source FROM aliases WHERE source='%s' AND active=1

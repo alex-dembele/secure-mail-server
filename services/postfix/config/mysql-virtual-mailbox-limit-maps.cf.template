@@ -1,0 +1,11 @@
+# ============================================
+# MySQL Virtual Mailbox Limit Maps
+# Query user quotas from database
+# Returns quota in bytes for user
+# ============================================
+
+user = ${DB_USER}
+password = ${DB_PASSWORD}
+hosts = ${DB_HOST}:${DB_PORT}
+dbname = ${DB_NAME}
+query = SELECT quota FROM users WHERE email='%s' AND active=1

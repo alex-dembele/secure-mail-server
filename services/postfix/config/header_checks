@@ -1,0 +1,30 @@
+# ============================================
+# Postfix Header Checks
+# Regex-based header filtering
+# ============================================
+
+# Remove unwanted headers from incoming mail
+/^Received:/                IGNORE
+/^X-Originating-IP:/        IGNORE
+/^X-Mailer:/                IGNORE
+/^User-Agent:/              IGNORE
+/^X-Enigmail:/              IGNORE
+
+# Block common spam patterns
+/^Subject:.*\b(viagra|cialis|casino|lottery|winner)\b/i    REJECT Spam detected
+/^Subject:.*\$\$\$/                                         REJECT Spam detected
+/^Subject:.*\bmake money\b/i                                REJECT Spam detected
+/^Subject:.*\benlarge\b/i                                   REJECT Spam detected
+
+# Block phishing attempts
+/^Subject:.*\bverify your account\b/i                       REJECT Phishing attempt
+/^Subject:.*\bupdate your information\b/i                   REJECT Phishing attempt
+/^Subject:.*\bsuspended account\b/i                         REJECT Phishing attempt
+
+# Block malicious content
+/^Content-Type:.*executable/                                REJECT Executable content not allowed
+/^Content-Disposition:.*\.exe/i                             REJECT Executable attachments blocked
+/^Content-Disposition:.*\.scr/i                             REJECT Screen saver attachments blocked
+/^Content-Disposition:.*\.bat/i                             REJECT Batch file attachments blocked
+/^Content-Disposition:.*\.cmd/i                             REJECT Command file attachments blocked
+/^Content-Disposition:.*\.pif/i                             REJECT PIF file attachments blocked

@@ -1,0 +1,10 @@
+# ============================================
+# MySQL Virtual Mailbox Domains
+# Query virtual domains from database
+# ============================================
+
+user = ${DB_USER}
+password = ${DB_PASSWORD}
+hosts = ${DB_HOST}:${DB_PORT}
+dbname = ${DB_NAME}
+query = SELECT domain FROM domains WHERE domain='%s' AND active=1

@@ -1,0 +1,28 @@
+# ============================================
+# Postfix MIME Header Checks
+# Check MIME headers for malicious content
+# ============================================
+
+# Block dangerous file extensions in attachments
+/^Content-(Disposition|Type).*name\s*=\s*"?.*\.(exe|scr|pif|bat|cmd|com|cpl|dll|vbs|js|jar|zip|rar)(\?=)?"?\s*$/
+    REJECT Attachment type not allowed
+
+# Block executable content types
+/^Content-Type:\s*application\/(x-msdownload|x-msdos-program|x-executable)/
+    REJECT Executable content not allowed
+
+# Block potentially dangerous MIME types
+/^Content-Type:\s*application\/(x-sh|x-perl|x-python|x-ruby)/
+    REJECT Script content not allowed
+
+# Block Windows screensavers
+/^Content-Type:.*\.scr$/
+    REJECT Screen saver attachments not allowed
+
+# Warning for compressed archives (might contain malware)
+/^Content-Type:.*\.(zip|rar|7z|tar|gz)$/
+    WARN Compressed archive detected
+
+# Block HTML with scripts in attachments
+/^Content-Type:\s*text\/html.*<script/i
+    REJECT HTML with scripts not allowed
