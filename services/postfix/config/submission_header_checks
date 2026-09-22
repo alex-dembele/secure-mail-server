@@ -1,0 +1,13 @@
+# ============================================
+# Submission Header Checks
+# Clean headers from authenticated users
+# ============================================
+
+# Remove headers that reveal client information
+/^X-Originating-IP:/        IGNORE
+/^X-Mailer:/                IGNORE
+/^User-Agent:/              IGNORE
+/^X-Enigmail:/              IGNORE
+
+# Replace Received header to hide client IP
+/^Received: from .*\(.*\[.*\]\).*by/    REPLACE Received: from authenticated-user

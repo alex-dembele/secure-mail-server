@@ -1,0 +1,255 @@
+# ============================================
+# Base Docker Compose Configuration
+# Common settings for all mailserver services
+# Use as extension with docker-compose.yml files
+# ============================================
+
+version: '3.9'
+
+# ===========================================
+# X-TEMPLATES: Reusable configuration blocks
+# ===========================================
+
+# Common service configuration
+x-common-service: &common-service
+  restart: unless-stopped
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+      labels: "service"
+  networks:
+    - mailserver
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+# Common environment variables
+x-common-environment: &common-env
+  TZ: ${TZ:-UTC}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  MAILSERVER_VERSION: ${MAILSERVER_VERSION:-1.0.0}
+
+# Common build configuration
+x-common-build: &common-build
+  context: .
+  platforms:
+    - linux/amd64
+    - linux/arm64
+  args:
+    BUILDKIT_INLINE_CACHE: "1"
+
+# Common health check configuration
+x-common-healthcheck: &common-healthcheck
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+
+# Database service template
+x-database-service: &database-service
+  <<: *common-service
+  environment:
+    <<: *common-env
+  volumes:
+    - db_data:/var/lib/mysql
+  healthcheck:
+    <<: *common-healthcheck
+    test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+
+# Mail service template
+x-mail-service: &mail-service
+  <<: *common-service
+  environment:
+    <<: *common-env
+    WAIT_FOR_HOST: ${DB_HOST:-mysql}
+    WAIT_FOR_PORT: ${DB_PORT:-3306}
+    WAIT_TIMEOUT: "60"
+  networks:
+    - mailserver
+  depends_on:
+    - mysql
+
+# ===========================================
+# NETWORKS
+# ===========================================
+
+networks:
+  mailserver:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-mailserver
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+    labels:
+      com.mailserver.network: "main"
+
+  # Monitoring network (optional)
+  monitoring:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-monitoring
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16
+    labels:
+      com.mailserver.network: "monitoring"
+
+# ===========================================
+# VOLUMES
+# ===========================================
+
+volumes:
+  # Mail storage - persistent mailboxes
+  mail_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MAIL_DATA_PATH:-./data/mail}
+    labels:
+      com.mailserver.volume: "mail-data"
+      com.mailserver.backup: "required"
+
+  # Database - user accounts and configuration
+  db_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DB_DATA_PATH:-./data/db}
+    labels:
+      com.mailserver.volume: "database"
+      com.mailserver.backup: "required"
+
+  # DKIM keys - signing keys
+  dkim_keys:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DKIM_KEYS_PATH:-./data/dkim}
+    labels:
+      com.mailserver.volume: "dkim-keys"
+      com.mailserver.backup: "required"
+      com.mailserver.sensitive: "true"
+
+  # TLS certificates
+  tls_certs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${TLS_CERTS_PATH:-./data/tls}
+    labels:
+      com.mailserver.volume: "tls-certs"
+      com.mailserver.sensitive: "true"
+
+  # Redis data - cache and sessions
+  redis_data:
+    driver: local
+    labels:
+      com.mailserver.volume: "redis-data"
+      com.mailserver.backup: "optional"
+
+  # Rspamd data - spam learning
+  rspamd_data:
+    driver: local
+    labels:
+      com.mailserver.volume: "rspamd-data"
+      com.mailserver.backup: "optional"
+
+  # ClamAV data - virus definitions
+  clamav_data:
+    driver: local
+    labels:
+      com.mailserver.volume: "clamav-data"
+      com.mailserver.backup: "optional"
+
+  # Logs - centralized logging
+  logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${LOGS_PATH:-./logs}
+    labels:
+      com.mailserver.volume: "logs"
+
+  # Backups - local backup storage
+  backups:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${BACKUPS_PATH:-./backups}
+    labels:
+      com.mailserver.volume: "backups"
+
+# ===========================================
+# SECRETS (Docker Swarm / Compose v3.1+)
+# ===========================================
+
+secrets:
+  # Database credentials
+  db_root_password:
+    file: ${DB_ROOT_PASSWORD_FILE:-./secrets/db_root_password.txt}
+
+  db_password:
+    file: ${DB_PASSWORD_FILE:-./secrets/db_password.txt}
+
+  # Admin API secret
+  api_secret_key:
+    file: ${API_SECRET_KEY_FILE:-./secrets/api_secret_key.txt}
+
+  # Rspamd controller password
+  rspamd_password:
+    file: ${RSPAMD_PASSWORD_FILE:-./secrets/rspamd_password.txt}
+
+  # Grafana admin password
+  grafana_password:
+    file: ${GRAFANA_PASSWORD_FILE:-./secrets/grafana_password.txt}
+
+# ===========================================
+# CONFIGS (Docker Swarm / Compose v3.3+)
+# ===========================================
+
+configs:
+  postfix_main_cf:
+    file: ${POSTFIX_MAIN_CF:-./config/postfix/main.cf}
+
+  postfix_master_cf:
+    file: ${POSTFIX_MASTER_CF:-./config/postfix/master.cf}
+
+  dovecot_conf:
+    file: ${DOVECOT_CONF:-./config/dovecot/dovecot.conf}
+
+  rspamd_local_conf:
+    file: ${RSPAMD_LOCAL_CONF:-./config/rspamd/local.d/worker-normal.inc}
+
+# ===========================================
+# EXTENSION FIELDS (for service definitions)
+# ===========================================
+
+# Use these templates in your docker-compose.yml:
+#
+# services:
+#   postfix:
+#     <<: *mail-service
+#     image: ${REGISTRY}/postfix:${VERSION}
+#     ports:
+#       - "25:25"
+#       - "587:587"
+#
+#   mysql:
+#     <<: *database-service
+#     image: mysql:8.0
+#     environment:
+#       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+#       MYSQL_DATABASE: ${DB_NAME}

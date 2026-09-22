@@ -1,0 +1,188 @@
+# ============================================
+# Postfix Master Process Configuration
+# ============================================
+#
+# service type  private unpriv  chroot  wakeup  maxproc command + args
+#               (yes)   (yes)   (no)    (never) (100)
+
+# ============================================
+# SMTP SERVICE (Port 25)
+# ============================================
+smtp      inet  n       -       n       -       -       smtpd
+  -o syslog_name=postfix/smtp
+  -o smtpd_tls_security_level=may
+  -o smtpd_sasl_auth_enable=no
+  -o smtpd_client_restrictions=permit_mynetworks,reject
+  -o smtpd_helo_restrictions=
+  -o smtpd_sender_restrictions=
+  -o smtpd_recipient_restrictions=permit_mynetworks,reject_unauth_destination
+  -o smtpd_relay_restrictions=permit_mynetworks,reject
+  -o milter_macro_daemon_name=ORIGINATING
+
+# ============================================
+# SUBMISSION SERVICE (Port 587)
+# ============================================
+submission inet n       -       n       -       -       smtpd
+  -o syslog_name=postfix/submission
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_sasl_type=dovecot
+  -o smtpd_sasl_path=inet:dovecot:12345
+  -o smtpd_tls_auth_only=yes
+  -o smtpd_reject_unlisted_recipient=no
+  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+  -o smtpd_helo_restrictions=
+  -o smtpd_sender_restrictions=permit_sasl_authenticated,reject
+  -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject_unauth_destination
+  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+  -o milter_macro_daemon_name=ORIGINATING
+  -o cleanup_service_name=submission-cleanup
+
+# ============================================
+# SMTPS SERVICE (Port 465) - Implicit TLS
+# ============================================
+smtps     inet  n       -       n       -       -       smtpd
+  -o syslog_name=postfix/smtps
+  -o smtpd_tls_wrappermode=yes
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_sasl_type=dovecot
+  -o smtpd_sasl_path=inet:dovecot:12345
+  -o smtpd_reject_unlisted_recipient=no
+  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+  -o smtpd_helo_restrictions=
+  -o smtpd_sender_restrictions=permit_sasl_authenticated,reject
+  -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject_unauth_destination
+  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+  -o milter_macro_daemon_name=ORIGINATING
+  -o cleanup_service_name=submission-cleanup
+
+# ============================================
+# CLEANUP SERVICES
+# ============================================
+submission-cleanup unix n     -       n       -       0       cleanup
+  -o header_checks=regexp:/etc/postfix/submission_header_checks
+  -o nested_header_checks=
+
+# ============================================
+# PICKUP SERVICE (Local mail pickup)
+# ============================================
+pickup    unix  n       -       n       60      1       pickup
+  -o content_filter=
+  -o receive_override_options=no_header_body_checks
+
+# ============================================
+# CLEANUP SERVICE
+# ============================================
+cleanup   unix  n       -       n       -       0       cleanup
+
+# ============================================
+# QMGR SERVICE (Queue manager)
+# ============================================
+qmgr      unix  n       -       n       300     1       qmgr
+
+# ============================================
+# TLSMGR SERVICE (TLS session cache)
+# ============================================
+tlsmgr    unix  -       -       n       1000?   1       tlsmgr
+
+# ============================================
+# REWRITE SERVICE
+# ============================================
+rewrite   unix  -       -       n       -       -       trivial-rewrite
+
+# ============================================
+# BOUNCE SERVICE
+# ============================================
+bounce    unix  -       -       n       -       0       bounce
+
+# ============================================
+# DEFER SERVICE
+# ============================================
+defer     unix  -       -       n       -       0       bounce
+
+# ============================================
+# TRACE SERVICE
+# ============================================
+trace     unix  -       -       n       -       0       bounce
+
+# ============================================
+# VERIFY SERVICE
+# ============================================
+verify    unix  -       -       n       -       1       verify
+
+# ============================================
+# FLUSH SERVICE
+# ============================================
+flush     unix  n       -       n       1000?   0       flush
+
+# ============================================
+# PROXYMAP SERVICE
+# ============================================
+proxymap  unix  -       -       n       -       -       proxymap
+
+# ============================================
+# PROXYWRITE SERVICE
+# ============================================
+proxywrite unix -       -       n       -       1       proxymap
+
+# ============================================
+# SMTP CLIENT
+# ============================================
+smtp      unix  -       -       n       -       -       smtp
+
+# ============================================
+# RELAY SERVICE
+# ============================================
+relay     unix  -       -       n       -       -       smtp
+  -o syslog_name=postfix/relay
+  -o smtp_fallback_relay=
+
+# ============================================
+# SHOWQ SERVICE (Queue listing)
+# ============================================
+showq     unix  n       -       n       -       -       showq
+
+# ============================================
+# ERROR SERVICE
+# ============================================
+error     unix  -       -       n       -       -       error
+
+# ============================================
+# RETRY SERVICE
+# ============================================
+retry     unix  -       -       n       -       -       error
+
+# ============================================
+# DISCARD SERVICE
+# ============================================
+discard   unix  -       -       n       -       -       discard
+
+# ============================================
+# LOCAL SERVICE (Local delivery)
+# ============================================
+local     unix  -       n       n       -       -       local
+
+# ============================================
+# VIRTUAL SERVICE (Virtual delivery)
+# ============================================
+virtual   unix  -       n       n       -       -       virtual
+
+# ============================================
+# LMTP SERVICE (For Dovecot delivery)
+# ============================================
+lmtp      unix  -       -       n       -       -       lmtp
+
+# ============================================
+# ANVIL SERVICE (Connection/rate limiting)
+# ============================================
+anvil     unix  -       -       n       -       1       anvil
+
+# ============================================
+# SCACHE SERVICE (Connection cache)
+# ============================================
+scache    unix  -       -       n       -       1       scache
+
+# ============================================
+# POSTLOG SERVICE
+# ============================================
+postlog   unix-dgram n  -       n       -       1       postlogd
